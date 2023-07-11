@@ -1,6 +1,8 @@
 import os, csv, glob
 import json
 import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from datetime import datetime
 
@@ -112,7 +114,7 @@ def labelSteps(datas, startPt = 30, rateTh = 0.3, width_LB = 15, avgRate_LB = 0.
     return listOfSteps, round(stepDiff, 1), round(cp, 1), round(stepWidth, 1), round(avgRate, 1), round(maxDiff, 1)
 
 
-def readRunCsv(folderPath, filename):
+def readRunCsv(filename):
 
     x = []
     signalList = []
@@ -127,7 +129,7 @@ def readRunCsv(folderPath, filename):
     ChResult = []
     OverallResult = ""
 
-    with open(os.path.join(folderPath, filename),'r') as csvfile:
+    with open(filename,'r') as csvfile:
         rows = csv.reader(csvfile, delimiter=',')
         idx = 0
         headerDist = {}
@@ -175,20 +177,12 @@ def readRunCsv(folderPath, filename):
 
             idx += 1
 
-    featList = np.zeros((5,5))
-
-    if len(signalList) != 0:
-
-        for i in range(5):
-            _, diff, cp, stepWidth, avgRate, maxDiff= labelSteps(signalList[i])
-
-            featList[i] = [diff, cp, stepWidth, avgRate, maxDiff]
-    return idInfo, OverallResult, featList
+    return idInfo, OverallResult, signalList
 
 
 def readTestlog(filename):
     
-    collection = []
+    testLog = {}
     with open(filename,'r') as csvfile:
         items = csv.reader(csvfile, delimiter=',')
         idx = 0
@@ -197,27 +191,71 @@ def readTestlog(filename):
                 headers = row
                 idx += 1
                 continue
-            #print(row)
-            docItem = {}
-            for idx, header in enumerate(headers):
-                # if header == 'TestDate':
-                #     docItem[header] = datetime.strptime(row[idx], '%m/%d/%Y').date()
-                #     continue
-                docItem[header] = row[idx]
-            collection.append(docItem)
-    return collection
+            inputGroup = row[11]
+            testLog[row[0]] = inputGroup
+    return testLog
 
 def getMetric():
 
     dataPath = './data/'
     filenames = sorted(glob.glob(os.path.join(dataPath, '*.csv')))
+    testLog = readTestlog('./S2R_testlog.csv')
+    # print(testLog)
 
-    for filename in filenames:
-        idInfo, overallRlt, featList = readRunCsv(dataPath, filename)
-
+    idInfo, overallRlt, signalList = "", "", []
     invalidCnt = 0
     truePosCnt = 0
     falsePosCnt = 0
     trueNegCnt = 0
     falseNegCnt = 0
+
+    for filename in filenames:
+        idInfo, overallRlt, signalList = readRunCsv(filename)
+        sampleGroup = testLog[os.path.splitext(os.path.basename(filename))[0]]
+
+        groundTruth = False
+        if sampleGroup != 'Negative':
+            groundTruth = True
+
+        startPt, rateTh, width_LB, avgRate_LB = [30, 0.3, 15, 0.8] #rateTh, width_LB, avgRate_LB
+        thresholdList = [40, 40, 40, 40, 40]
+        rltList = [False, False, False, False, False]
+
+        if len(signalList) != 0:
+
+            for i in range(5):
+                _, diff, cp, stepWidth, avgRate, maxDiff= labelSteps(signalList[i], startPt, rateTh, width_LB, avgRate_LB)
+                rltList[i] = diff >= thresholdList[i]
+        if rltList[0] == False:
+            invalidCnt += 1
+        else:
+            if rltList[1] or rltList[2] or rltList[3] or rltList[4] == True:
+                if groundTruth: 
+                    truePosCnt += 1
+                else:
+                    falsePosCnt += 1
+            else:
+                if groundTruth: 
+                    falseNegCnt += 1
+                else:
+                    trueNegCnt += 1
+    cf_matrix = [[truePosCnt, falsePosCnt], [falseNegCnt, trueNegCnt]]
+    ax = sns.heatmap(cf_matrix, annot=True, cmap='Blues')
+
+    ax.set_title('Seaborn Confusion Matrix with labels\n\n');
+    ax.set_xlabel('\nPredicted Values')
+    ax.set_ylabel('Actual Values ');
+
+    ## Ticket labels - List must be in alphabetical order
+    ax.xaxis.set_ticklabels(['True','False'])
+    ax.yaxis.set_ticklabels(['True','False'])
+
+    ## Display the visualization of the Confusion Matrix.
+    plt.show()
+
+if __name__ == '__main__':
+    getMetric()
+
+    
+
 
