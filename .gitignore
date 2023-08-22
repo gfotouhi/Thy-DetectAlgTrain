@@ -6,6 +6,7 @@
 # 
 output/
 data/
+NSCPI_training/
 
 # User-specific files
 *.rsuser
