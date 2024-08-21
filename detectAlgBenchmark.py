@@ -1,5 +1,6 @@
 import os, csv, glob
-import json
+import argparse
+
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
@@ -492,7 +493,28 @@ def plotFalseDetectionCurves(fdList, plotType, paras):
     plt.savefig(fileName)
     
 if __name__ == '__main__':
+
+    msg = "Please specify the parameter (startPt, rateTh, width_LB, avgRate_LB, threshold) to sweep"
+
+    # Initialize parser
+    parser = argparse.ArgumentParser(description=msg)
     
-    paraSweep('threshold', [40, 110], 10)
+    # Adding optional argument
+    parser.add_argument("-p", help = "Parameter to sweep")
+    parser.add_argument("-st", help = "start of parameter")
+    parser.add_argument("-e", help = "end of parameter")
+    parser.add_argument("-s", help = "Step of parameter")
+    
+    
+    # Read arguments from command line
+    args = parser.parse_args()
+
+    availablePara = set(['startPt', 'rateTh', 'width_LB', 'avgRate_LB', 'threshold'])
+    if args.p in availablePara:
+        paraSweep(args.p, [int(args.st), int(args.e)], int(args.s))
+    else:
+        print(msg)
+    
+    # paraSweep('threshold', [40, 110], 10)
     # getFalseDetectionList([75, 0.5, 15, 0.9, 80], 'IV')
 
