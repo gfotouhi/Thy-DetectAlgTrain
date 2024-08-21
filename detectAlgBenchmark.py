@@ -222,16 +222,17 @@ def testsGrouping(filename):
     posTests = {}
     negTests = set()
     # row #, ch #
-    outlierCurves = [[7, 2], [9, 4], [12, 2], [23, 4], [25, 4], [28, 3]]
+    # outlierCurves = [[7, 2], [9, 4], [12, 2], [23, 4], [25, 4], [28, 3]]
+    outlierCurves = []
     
     cnt = 0
     for idx, row in df.iterrows():
-        if row['Result Tag'] == 'POS curves for ADF training':
-            levelGp = row['Input [C]'].split(' ')[0]
+        if 'PC' in row['Used for:']:
+            levelGp = row['Input [C]']
             id = row['Test ID#']
             posTests[id] = levelGp
             cnt += 1
-        elif row['Result Tag'] == 'NEG curves for ADF training':
+        elif 'NTC' in row['Used for:']:
             negTests.add(row['Test ID#'])
             cnt += 1
             
@@ -241,7 +242,7 @@ def testsGrouping(filename):
     return posTests, negTests, outlierCurves        
 
 def NTCMetric(negTests):
-    dataPath = './NSCPI_training/'
+    dataPath = './SC2A2_training/'
     filenames = sorted(glob.glob(os.path.join(dataPath, '*.csv')))
     invalidCnt = 0
     trueNegCnt = 0
@@ -259,37 +260,17 @@ def NTCMetric(negTests):
         negCurves.append([testId, 'ch2', signalList[1]])
         negCurves.append([testId, 'ch3', signalList[2]])
         negCurves.append([testId, 'ch4', signalList[3]])
+        negCurves.append([testId, 'ch5', signalList[4]])
 
-        startPt, rateTh, width_LB, avgRate_LB = [30, 0.3, 15, 0.8]
-        thresholdList = [40, 40, 40, 40, 40]
-        rltList = [False, False, False, False, False]
-        
-
-        if len(signalList) != 0:
-
-            for i in range(5):
-                _, diff, cp, stepWidth, avgRate, maxDiff= labelSteps(signalList[i], startPt, rateTh, width_LB, avgRate_LB)
-                rltList[i] = (diff >= thresholdList[i])
-        if rltList[0] == False:
-            invalidCnt += 1
-        else:
-            if rltList[1] or rltList[2] or rltList[3] or rltList[4] == True:
-                falsePosCnt += 1
-            else:
-                trueNegCnt += 1
-    # print(trueNegCnt, falsePosCnt, invalidCnt)
     return negCurves, pcCurves
                 
 def POSMetric(posTests, paras = [30, 0.3, 15, 0.8] , thresholdLt = [40, 40, 40, 40, 40]):
-    dataPath = './NSCPI_training/'
+    dataPath = './SC2A2_training/'
     filenames = sorted(glob.glob(os.path.join(dataPath, '*.csv')))
-    invalidCnt = 0
-    truePosCnt = 0
-    falseNegCnt = 0
-    invalidTestLt = []
-    posCurves1 = []
-    posCurves10 = []
-    posCurves100 = []
+
+    posCurvesL = []
+    posCurvesM = []
+    posCurvesH = []
     pcCurves = []
     
     
@@ -300,44 +281,23 @@ def POSMetric(posTests, paras = [30, 0.3, 15, 0.8] , thresholdLt = [40, 40, 40, 
         idInfo, overallRlt, signalList = readRunCsv(filename)
         
         pcCurves.append([testId, 'ch1', signalList[0]])
-        if posTests[testId] == '1':
-            posCurves1.append([testId, 'ch2', signalList[1]])
-            posCurves1.append([testId, 'ch3', signalList[2]])
-            posCurves1.append([testId, 'ch4', signalList[3]])
-        elif posTests[testId] == '10':
-            posCurves10.append([testId, 'ch2', signalList[1]])
-            posCurves10.append([testId, 'ch3', signalList[2]])
-            posCurves10.append([testId, 'ch4', signalList[3]])
-        elif posTests[testId] == '100':
-            posCurves100.append([testId, 'ch2', signalList[1]])
-            posCurves100.append([testId, 'ch3', signalList[2]])
-            posCurves100.append([testId, 'ch4', signalList[3]])
+        if posTests[testId] == 1:
+            posCurvesL.append([testId, 'ch2', signalList[1]])
+            posCurvesL.append([testId, 'ch3', signalList[2]])
+            posCurvesL.append([testId, 'ch4', signalList[3]])
+            posCurvesL.append([testId, 'ch5', signalList[4]])
+        elif posTests[testId] == 5:
+            posCurvesM.append([testId, 'ch2', signalList[1]])
+            posCurvesM.append([testId, 'ch3', signalList[2]])
+            posCurvesM.append([testId, 'ch4', signalList[3]])
+            posCurvesM.append([testId, 'ch5', signalList[4]])
+        elif posTests[testId] == 10:
+            posCurvesH.append([testId, 'ch2', signalList[1]])
+            posCurvesH.append([testId, 'ch3', signalList[2]])
+            posCurvesH.append([testId, 'ch4', signalList[3]])
+            posCurvesH.append([testId, 'ch5', signalList[4]])
             
-        
-        startPt, rateTh, width_LB, avgRate_LB = paras
-        rltList = [False, False, False, False, False]
-        
-        valueBuffer = None
-        
-
-        if len(signalList) != 0:
-
-            for i in range(5):
-                _, diff, cp, stepWidth, avgRate, maxDiff= labelSteps(signalList[i], startPt, rateTh, width_LB, avgRate_LB)
-                rltList[i] = (diff >= thresholdLt[i])
-                if rltList[0] == False:
-                    valueBuffer = _
-                    
-        if rltList[0] == False:
-            invalidCnt += 1
-            invalidTestLt.append([testId, valueBuffer])
-        else:
-            if rltList[1] or rltList[2] or rltList[3] or rltList[4] == True:
-                truePosCnt += 1
-            else:
-                falseNegCnt += 1
-    # print(truePosCnt, falseNegCnt, invalidCnt)
-    return posCurves1, posCurves10, posCurves100, pcCurves
+    return posCurvesL, posCurvesM, posCurvesH, pcCurves
     
 def getInvalTestsCsv(invalidTestLt):
     dataPath = './NSCPI_training/'
@@ -350,11 +310,11 @@ def getInvalTestsCsv(invalidTestLt):
 def curvesMetric(posCurves, negCurves, pcCurves, paras = [75, 0.3, 15, 0.8, 40]):
     
     startPt, rateTh, width_LB, avgRate_LB, threshold = paras #rateTh, width_LB, avgRate_LB, threshold
-    ivCnt, fpCnt, fn1Cnt, fn10Cnt, fn100Cnt = 0, 0, 0, 0, 0
+    ivCnt, fpCnt, fnLCnt, fnMCnt, fnHCnt = 0, 0, 0, 0, 0
     pcThreshold = 40
     
-    posCurves1, posCurves10, posCurves100 = posCurves
-    curvesDist = {'PC' : pcCurves, 'NEG' : negCurves, 'POS1' : posCurves1, 'POS10' : posCurves10, 'POS100' : posCurves100}
+    posCurvesL, posCurvesM, posCurvesH = posCurves
+    curvesDist = {'PC' : pcCurves, 'NEG' : negCurves, 'POSL' : posCurvesL, 'POSM' : posCurvesM, 'POSH' : posCurvesH}
     falseDetectionList = []
     
     for type, curves in curvesDist.items():
@@ -369,21 +329,21 @@ def curvesMetric(posCurves, negCurves, pcCurves, paras = [75, 0.3, 15, 0.8, 40])
                 if type == 'PC':
                     ivCnt += 1
                     falseDetectionList.append(['IV', testId, ch, signal])
-                elif type == 'POS1':
-                    fn1Cnt += 1
-                    falseDetectionList.append(['FN1', testId, ch, signal])
-                elif type == 'POS10':
-                    fn10Cnt += 1
-                    falseDetectionList.append(['FN10', testId, ch, signal])
-                elif type == 'POS100':
-                    fn100Cnt += 1
-                    falseDetectionList.append(['FN100', testId, ch, signal])
+                elif type == 'POSL':
+                    fnLCnt += 1
+                    falseDetectionList.append(['FNL', testId, ch, signal])
+                elif type == 'POSM':
+                    fnMCnt += 1
+                    falseDetectionList.append(['FNM', testId, ch, signal])
+                elif type == 'POSH':
+                    fnHCnt += 1
+                    falseDetectionList.append(['FNH', testId, ch, signal])
             elif rlt and type == 'NEG':
                 fpCnt += 1
                 falseDetectionList.append(['FP', testId, ch, signal])
             
-    print(f'rateTh = {rateTh}, width_LB = {width_LB}, avgRate_LB = {avgRate_LB}')
-    return fpCnt, fn100Cnt, fn10Cnt, fn1Cnt, ivCnt, falseDetectionList
+    print(f'rateTh = {rateTh}, width_LB = {width_LB}, avgRate_LB = {avgRate_LB}, threshold = {threshold}')
+    return fpCnt, fnHCnt, fnMCnt, fnLCnt, ivCnt, falseDetectionList
 
 
 def getMetric():
@@ -449,17 +409,17 @@ def getMetric():
 
 
 def paraSweep(paraName, range, step):
-    testlogFile = 'NCSPI_testlog.csv'
+    testlogFile = 'SC2A2_testlog.csv'
     # idAudit(testlogFile)
     posTests, negTests, outliers = testsGrouping(testlogFile)
     negCurves, pcNTC = NTCMetric(negTests)
     
-    posCurves1, posCurves10, posCurves100, pcPOS = POSMetric(posTests)
-    posCurves = [posCurves1, posCurves10, posCurves100]
+    posCurvesL, posCurvesM, posCurvesH, pcPOS = POSMetric(posTests)
+    posCurves = [posCurvesL, posCurvesM, posCurvesH]
     pcCurves = pcNTC + pcPOS
     
     
-    paras = [75, 0.4, 15, 0.8, 40]
+    paras = [75, 0.5, 15, 0.9, 40]
     index = 0
     if paraName == 'startPt':
         index = 0
@@ -477,15 +437,15 @@ def paraSweep(paraName, range, step):
     for para in paraSweeptLt:
         paras[index] = np.round(para,2)
         
-        fpCnt, fn100Cnt, fn10Cnt, fn1Cnt, ivCnt, fdList = curvesMetric(posCurves, negCurves, pcCurves, paras)
+        fpCnt, fnHCnt, fnMCnt, fnLCnt, ivCnt, fdList = curvesMetric(posCurves, negCurves, pcCurves, paras)
         # construct result into dataframe
-        d = {'FP': [fpCnt, len(negCurves)], 'FN100': [fn100Cnt, len(posCurves100)], 'FN10': [fn10Cnt, len(posCurves10)], 'FN1': [fn1Cnt, len(posCurves1)], 'IV': [ivCnt, len(pcCurves)]}
+        d = {'FP': [fpCnt, len(negCurves)], 'FNH': [fnHCnt, len(posCurvesH)], 'FNM': [fnMCnt, len(posCurvesM)], 'FNL': [fnLCnt, len(posCurvesL)], 'IV': [ivCnt, len(pcCurves)]}
         df = pd.DataFrame(data = d, index = ['# of curves', 'Total # of curves'])
         
         print(df)
 
 def getFalseDetectionList(paras = [75, 0.3, 15, 0.8, 40], plotType = 'FP'):
-    testlogFile = 'NCSPI_testlog.csv'
+    testlogFile = 'SC2A2_testlog.csv'
     # idAudit(testlogFile)
     posTests, negTests, outliers = testsGrouping(testlogFile)
     negCurves, pcNTC = NTCMetric(negTests)
@@ -512,7 +472,7 @@ def plotFalseDetectionCurves(fdList, plotType, paras):
 
     plt.xlabel('Time (mins)', fontsize = 19, fontweight = 'bold')
     plt.ylabel('Signal (mvs)', fontsize = 19, fontweight = 'bold')
-    plt.title(f'False Detection Curves for {plotType} with rateTh[{rate}], widthLb[{width}], avgRateLb[{avgRate}]', fontsize = 19, fontweight = 'bold')
+    plt.title(f'False Detection Curves for {plotType} with rateTh[{rate}], widthLb[{width}], avgRateLb[{avgRate}], Th[{th}]', fontsize = 19, fontweight = 'bold')
     
 
     for df in fdList:
@@ -533,6 +493,6 @@ def plotFalseDetectionCurves(fdList, plotType, paras):
     
 if __name__ == '__main__':
     
-    paraSweep('avgRate_LB', [0.4, 0.6], 0.1)
-    getFalseDetectionList([75, 0.4, 15, 0.61, 40], 'FN1')
+    paraSweep('threshold', [40, 110], 10)
+    # getFalseDetectionList([75, 0.5, 15, 0.9, 80], 'IV')
 
