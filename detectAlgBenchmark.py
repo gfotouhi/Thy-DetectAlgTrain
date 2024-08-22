@@ -242,8 +242,7 @@ def testsGrouping(filename):
     print(f'POS total #: {posTestNum}, NEG total #: {negTestNum}')
     return posTests, negTests, outlierCurves        
 
-def NTCMetric(negTests):
-    dataPath = './SC2A2_training/'
+def NTCMetric(negTests, dataPath = './SC2A2_training/'):
     filenames = sorted(glob.glob(os.path.join(dataPath, '*.csv')))
     invalidCnt = 0
     trueNegCnt = 0
@@ -265,8 +264,7 @@ def NTCMetric(negTests):
 
     return negCurves, pcCurves
                 
-def POSMetric(posTests, paras = [30, 0.3, 15, 0.8] , thresholdLt = [40, 40, 40, 40, 40]):
-    dataPath = './SC2A2_training/'
+def POSMetric(posTests, paras = [30, 0.3, 15, 0.8] , thresholdLt = [40, 40, 40, 40, 40], dataPath = './SC2A2_training/'):
     filenames = sorted(glob.glob(os.path.join(dataPath, '*.csv')))
 
     posCurvesL = []
@@ -409,13 +407,12 @@ def getMetric():
     plt.show()
 
 
-def paraSweep(paraName, range, step):
-    testlogFile = 'SC2A2_testlog.csv'
+def paraSweep( paraName, range, step, testlogFile = 'SC2A2_testlog.csv', dataPath = './SC2A2_training/'):
     # idAudit(testlogFile)
     posTests, negTests, outliers = testsGrouping(testlogFile)
-    negCurves, pcNTC = NTCMetric(negTests)
+    negCurves, pcNTC = NTCMetric(negTests, dataPath)
     
-    posCurvesL, posCurvesM, posCurvesH, pcPOS = POSMetric(posTests)
+    posCurvesL, posCurvesM, posCurvesH, pcPOS = POSMetric(posTests, dataPath)
     posCurves = [posCurvesL, posCurvesM, posCurvesH]
     pcCurves = pcNTC + pcPOS
     
@@ -494,6 +491,10 @@ def plotFalseDetectionCurves(fdList, plotType, paras):
     
 if __name__ == '__main__':
 
+    # Testlog filename and data path
+    TESTLOGFILE = 'PD_testlog.csv'
+    DATAPATH = './PD_training/'
+
     msg = "Please specify the parameter (startPt, rateTh, width_LB, avgRate_LB, threshold) to sweep"
 
     # Initialize parser
@@ -511,7 +512,7 @@ if __name__ == '__main__':
 
     availablePara = set(['startPt', 'rateTh', 'width_LB', 'avgRate_LB', 'threshold'])
     if args.p in availablePara:
-        paraSweep(args.p, [int(args.st), int(args.e)], int(args.s))
+        paraSweep(args.p, [int(args.st), int(args.e)], int(args.s), TESTLOGFILE, DATAPATH)
     else:
         print(msg)
     
