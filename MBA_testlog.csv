@@ -1,0 +1,4 @@
+,Test ID#,Protocol,Date,Location,Device Operator,Kit Operator,Device ID,Cartridge/Kit ID,Cartridge/Kit lot#,Used for:,Input,Input group,Input [C],Result,Exp. Result,PD1 mvs ?,PD2 mvs ?,PD3 mvs ?,PD4 mvs ?,PD5 mvs ?,Result Comment,Result Tag,Device Effect,Optics file,OneNote page
+1,2024-09-04_NABITB001.3_1,S2R,9/4/2024,CXL,,,NABITB001.3,,,ADF Training of SC2A2 ,Negative - dH2O,Negative,0,,No,,,,,,well 4 false,DRIFT,,Link,Link
+2,2024-09-10_NABITB001.3_2,S2R,9/10/2024,CXL,,,NABITB001.3,,,ADF Training of SC2A2 ,Negative ,Negative,0,,No,,,,,,,,,,
+3,2024-09-10_NABITB001.3_3,S2R,9/10/2024,CXL,,,NABITB001.3,,,ADF Training of SC2A2 ,Negative ,Negative,0,,No,,,,,,,,,,
